@@ -6,7 +6,7 @@
 <title>Slime Clicker</title>
 
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#2f9a62">
+<meta name="theme-color" content="#000000">
 
 <style>
 body {
@@ -19,22 +19,180 @@ body {
   align-items: center;
   height: 100vh;
 }
+
+/* Death blackout */
+#death-screen {
+  position: fixed;
+  inset: 0;
+  background: black;
+  z-index: 999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.1s;
+}
+
 .container {
   width: 90%;
   max-width: 360px;
   text-align: center;
 }
+
 .bar {
   background: #333;
   border-radius: 12px;
   overflow: hidden;
   margin: 10px 0;
 }
+
 .bar-inner {
   height: 16px;
   background: #f44444;
   width: 100%;
+  transition: width 0.15s;
 }
+
+/* Slime container */
+.slime {
+  position: relative;
+  width: 110px;          /* HALF size */
+  height: 80px;
+  margin: 20px auto;
+  cursor: pointer;
+}
+
+/* Slime image */
+.slime img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0.85;         /* translucent */
+}
+
+/* Hidden black dot */
+.dot {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: black;
+  border-radius: 50%;
+  opacity: 0.08;         /* VERY hard to see */
+  pointer-events: none;
+}
+
+button {
+  background: #2f9a62;
+  border: none;
+  border-radius: 12px;
+  padding: 12px;
+  color: white;
+  font-size: 16px;
+  margin-top: 10px;
+}
+
+.stats {
+  display: flex;
+  justify-content: space-between;
+}
+</style>
+</head>
+
+<body>
+
+<div id="death-screen"></div>
+
+<div class="container">
+  <h2>Slime Clicker</h2>
+
+  <div class="stats">
+    <div>DMG: <span id="dmg">1</span></div>
+    <div>$ <span id="money">0</span></div>
+  </div>
+
+  <div>HP <span id="hp-text">5/5</span></div>
+  <div class="bar">
+    <div class="bar-inner" id="hp-bar"></div>
+  </div>
+
+  <div class="slime" id="slime">
+    <img src="slime.png" alt="Slime">
+    <div class="dot" id="dot"></div>
+  </div>
+
+  <button id="upgrade"></button>
+</div>
+
+<script>
+let maxHP = 5;
+let hp = maxHP;
+let dmg = 1;
+let money = 0;
+let cost = 2;
+
+const hpBar = document.getElementById("hp-bar");
+const hpText = document.getElementById("hp-text");
+const dmgText = document.getElementById("dmg");
+const moneyText = document.getElementById("money");
+const upgrade = document.getElementById("upgrade");
+const slime = document.getElementById("slime");
+const dot = document.getElementById("dot");
+const deathScreen = document.getElementById("death-screen");
+
+function randomizeDot() {
+  dot.style.left = Math.random() * 80 + "%";
+  dot.style.top = Math.random() * 60 + "%";
+}
+
+function updateUI() {
+  hpBar.style.width = (hp / maxHP * 100) + "%";
+  hpText.textContent = `${hp}/${maxHP}`;
+  dmgText.textContent = dmg;
+  moneyText.textContent = money;
+  upgrade.textContent = `Upgrade ($${cost}) +1 DMG`;
+}
+
+slime.onclick = () => {
+  if (hp <= 0) return;
+
+  hp -= dmg;
+
+  if (hp <= 0) {
+    money++;
+
+    // Death blackout
+    deathScreen.style.opacity = "1";
+
+    setTimeout(() => {
+      hp = maxHP;
+      randomizeDot();
+      updateUI();
+      deathScreen.style.opacity = "0";
+    }, 500);
+  }
+
+  updateUI();
+};
+
+upgrade.onclick = () => {
+  if (money >= cost) {
+    money -= cost;
+    dmg++;
+    cost *= 2;
+    updateUI();
+  }
+};
+
+// Initial setup
+randomizeDot();
+updateUI();
+
+// Service Worker
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js");
+}
+</script>
+
+</body>
+</html>}
 .slime {
   width: 220px;
   height: 160px;
