@@ -5,192 +5,173 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Slime Clicker</title>
 
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#000000">
+<!-- Special font for title -->
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
 
 <style>
-/* ===== GLOBAL ===== */
+* {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
 body {
   margin: 0;
   background: #000;
   color: white;
-  font-family: system-ui, sans-serif;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-}
-
-/* ===== BLACKOUT ===== */
-#death-screen {
-  position: fixed;
-  inset: 0;
-  background: #000;
-  opacity: 0;
-  pointer-events: none;
-  z-index: 999;
-}
-
-/* ===== LAYOUT ===== */
-.container {
-  width: 90%;
-  max-width: 360px;
+  font-family: Arial, sans-serif;
   text-align: center;
 }
 
+/* ===== TITLE ===== */
+#game-title {
+  font-family: 'Cinzel', serif;
+  font-size: 32px;
+  margin-top: 20px;
+  letter-spacing: 2px;
+}
+
+/* ===== SLIME NAME ===== */
+#slime-name {
+  margin-top: 20px;
+  font-size: 20px;
+  opacity: 0.85;
+}
+
+/* ===== STATS ===== */
 .stats {
   display: flex;
   justify-content: space-between;
+  width: 220px;
+  margin: 10px auto;
+  font-size: 14px;
 }
 
-.bar {
-  background: #222;
-  border-radius: 12px;
+/* ===== HP BAR ===== */
+.hp-container {
+  width: 220px;
+  margin: 10px auto 20px;
+  background: #333;
+  border-radius: 20px;
   overflow: hidden;
-  margin: 10px 0;
+  position: relative;
 }
 
-.bar-inner {
-  height: 16px;
-  background: #f44444;
+.hp-bar {
+  height: 18px;
+  background: #ff4b4b;
   width: 100%;
-  transition: width 0.15s;
+}
+
+.hp-text {
+  position: absolute;
+  width: 100%;
+  top: 0;
+  left: 0;
+  font-size: 12px;
+  line-height: 18px;
 }
 
 /* ===== SLIME ===== */
+.slime-wrapper {
+  width: 220px;
+  margin: auto;
+}
+
 .slime {
-  position: relative;
-  width: 110px;
-  height: 80px;
-  margin: 20px auto;
+  width: 220px;
   cursor: pointer;
+  transition: transform 0.1s ease;
 }
 
-.slime img {
-  width: 100%;
-  height: 100%;
-  opacity: 0.85;
-  display: block;
+.slime:active {
+  transform: scale(0.97);
 }
 
-/* ===== DOT ===== */
-.dot {
-  position: absolute;
-  width: 12px;
-  height: 12px;
-  background: black;
-  border-radius: 50%;
-  opacity: 0.06;
-  pointer-events: none;
+/* ===== UPGRADES ===== */
+.upgrades {
+  margin-top: 30px;
 }
 
-/* ===== BUTTON ===== */
+.upgrades h2 {
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
 button {
   background: #2f9a62;
-  border: none;
-  border-radius: 12px;
-  padding: 12px;
   color: white;
+  border: none;
+  border-radius: 14px;
+  padding: 14px 20px;
   font-size: 16px;
-  margin-top: 10px;
 }
 </style>
 </head>
 
 <body>
 
-<div id="death-screen"></div>
+<div id="game-title">Slime Clicker</div>
 
-<div class="container">
-  <h2>Slime Clicker</h2>
+<div id="slime-name">Small Slime</div>
 
-  <div class="stats">
-    <div>DMG: <span id="dmg">1</span></div>
-    <div>$ <span id="money">0</span></div>
-  </div>
+<div class="stats">
+  <div>DMG: <span id="dmg">1</span></div>
+  <div>$ <span id="money">5</span></div>
+</div>
 
-  <div>HP <span id="hp-text">5/5</span></div>
-  <div class="bar">
-    <div class="bar-inner" id="hp-bar"></div>
-  </div>
+<div class="hp-container">
+  <div class="hp-bar" id="hpBar"></div>
+  <div class="hp-text" id="hpText">HP 5 / 5</div>
+</div>
 
-  <div class="slime" id="slime">
-    <img src="slime.png" alt="Slime">
-    <div class="dot" id="dot"></div>
-  </div>
+<div class="slime-wrapper">
+  <img src="slime.png" class="slime" id="slime">
+</div>
 
-  <button id="upgrade"></button>
+<div class="upgrades">
+  <h2>Upgrades</h2>
+  <button id="upgradeBtn">Strength Training ($2) +1 DMG</button>
 </div>
 
 <script>
-let maxHP = 5;
-let hp = maxHP;
+let hp = 5;
+let maxHp = 5;
 let dmg = 1;
-let money = 0;
-let cost = 2;
+let money = 5;
+let upgradeCost = 2;
 
-const hpBar = document.getElementById("hp-bar");
-const hpText = document.getElementById("hp-text");
-const dmgText = document.getElementById("dmg");
-const moneyText = document.getElementById("money");
-const upgrade = document.getElementById("upgrade");
 const slime = document.getElementById("slime");
-const dot = document.getElementById("dot");
-const deathScreen = document.getElementById("death-screen");
-
-/* Dot only in center square */
-function randomizeDot() {
-  const zoneSize = 30; // square size
-  const centerX = 110 / 2 - zoneSize / 2;
-  const centerY = 80 / 2 - zoneSize / 2;
-
-  dot.style.left = centerX + Math.random() * zoneSize + "px";
-  dot.style.top = centerY + Math.random() * zoneSize + "px";
-}
-
-function updateUI() {
-  hpBar.style.width = (hp / maxHP * 100) + "%";
-  hpText.textContent = `${hp}/${maxHP}`;
-  dmgText.textContent = dmg;
-  moneyText.textContent = money;
-  upgrade.textContent = `Upgrade ($${cost}) +1 DMG`;
-}
+const hpBar = document.getElementById("hpBar");
+const hpText = document.getElementById("hpText");
 
 slime.onclick = () => {
-  if (hp <= 0) return;
-
   hp -= dmg;
-
   if (hp <= 0) {
-    money++;
-    deathScreen.style.opacity = "1";
-
-    setTimeout(() => {
-      hp = maxHP;
-      randomizeDot();
-      updateUI();
-      deathScreen.style.opacity = "0";
-    }, 500);
+    money += 1;
+    hp = maxHp;
   }
-
   updateUI();
 };
 
-upgrade.onclick = () => {
-  if (money >= cost) {
-    money -= cost;
-    dmg++;
-    cost *= 2;
+document.getElementById("upgradeBtn").onclick = () => {
+  if (money >= upgradeCost) {
+    money -= upgradeCost;
+    dmg += 1;
+    upgradeCost += 2;
+    document.getElementById("upgradeBtn").innerText =
+      `Strength Training ($${upgradeCost}) +1 DMG`;
     updateUI();
   }
 };
 
-randomizeDot();
-updateUI();
-
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("sw.js");
+function updateUI() {
+  hpBar.style.width = (hp / maxHp) * 100 + "%";
+  hpText.innerText = `HP ${hp} / ${maxHp}`;
+  document.getElementById("money").innerText = money;
+  document.getElementById("dmg").innerText = dmg;
 }
+
+updateUI();
 </script>
 
 </body>
